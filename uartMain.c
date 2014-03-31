@@ -9,14 +9,94 @@
 #include <unistd.h>
 #include <stdlib.h>
 
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netdb.h>
 
-/*
- * 'open_port()' - Открывает последовательный порт 1.
- *
- * Возвращает файловый дескриптор при успехе или -1 при ошибке.
- */
+void error(const char *msg)
+{
+    perror(msg);
+    exit(0);
+}
 
-void show(char *);
+int main(int argc, char *argv[])
+{
+    int sockfd, portno, n;
+    struct sockaddr_in serv_addr;
+    struct hostent *server;
+
+    char buffer[256];
+    if (argc < 3) {
+       fprintf(stderr,"usage %s hostname port\n", argv[0]);
+       exit(0);
+    }
+    portno = atoi(argv[2]);
+    sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    if (sockfd < 0)
+        error("ERROR opening socket");
+    server = gethostbyname(argv[1]);
+    if (server == NULL) {
+        fprintf(stderr,"ERROR, no such host\n");
+        exit(0);
+    }
+    bzero((char *) &serv_addr, sizeof(serv_addr));
+    serv_addr.sin_family = AF_INET;
+    bcopy((char *)server->h_addr,
+         (char *)&serv_addr.sin_addr.s_addr,
+         server->h_length);
+    serv_addr.sin_port = htons(portno);
+    if (connect(sockfd,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0)
+        error("ERROR connecting");
+    
+    
+    
+    
+	int fileDesc;
+	char str[1000] = {0};
+	unsigned int i = 0;
+	char c = '\0';
+	fileDesc = open_port();
+
+		printf("start\n");
+		while(1)
+		{
+			read(fileDesc, &c, 1);
+			if(c != '\n') 
+			{
+				str[i] = c;
+				i++;
+			}
+			if(c == '\n')
+			{
+				i=0;
+			//	printf("\nUART message: %s\n",str);
+                bzero(buffer,256);
+				buffer = show(str);
+                printf(buffer);                
+                n = write(sockfd,buffer,strlen(buffer));
+                if (n < 0)
+                    error("ERROR writing to socket");
+                    bzero(buffer,256);
+                    n = read(sockfd,buffer,255);
+                    if (n < 0)
+                        error("ERROR reading from socket");
+                printf("%s\n",buffer);
+			}
+		}	
+	close(fileDesc);
+    
+    
+    
+    
+    close(sockfd);
+    return 0;
+}
+
+
+
+
+char *show(char *);
 
 open_port(void)
 {
@@ -51,40 +131,11 @@ open_port(void)
   	return (fd);
 }
 
-int main(void)
+
+char *show(char *s) 
 {
-	//signal(SIGINT, my_function);
-	int fileDesc;
-	unsigned char str[1000] = {0};
-	unsigned int i = 0;
-	char c = '\0';
-	fileDesc = open_port();
-
-		printf("start\n");
-		while(1)
-		{
-			read(fileDesc, &c, 1);
-			if(c != '\n') 
-			{
-				str[i] = c;
-				i++;
-			}
-			if(c == '\n')
-			{
-				i=0;
-			//	printf("\nUART message: %s\n",str);
-				show(str);
-				memset(str, 0, 1000);
-			}
-		}	
-	close(fileDesc);
-	return 0;
-}
-
-void show(char *s) {
-
 	char *str;
-    	str = s;
+	str = s;
 	size_t strLen = strlen(str);
 	//char inputType[6] = {0};
 	//printf("\nString0: %s\n", str);
@@ -94,46 +145,46 @@ void show(char *s) {
 	//printf("\nString1: %s length: %d\n", inputType, (int)strlen(inputType));
 
 	if (!strcmp(inputType,"$GNRMC") || !strcmp(inputType, "$GPRMC"))
-	{
-	char *time = (char *) malloc(10*sizeof(char));
-        char *beliveFlag = malloc(1);
-	char *longtude = malloc(9);
-	char *NS = malloc(1);
-	char *latitude = malloc(10);
-	char *WE = malloc(1);
+	    {
+	        char *time = (char *) malloc(10*sizeof(char));
+            char *beliveFlag = malloc(1);
+	        char *longtude = malloc(9);
+	        char *NS = malloc(1);
+	        char *latitude = malloc(10);
+	        char *WE = malloc(1);
 
-	int i=0;
-	int j = 0;
-	int delimiterCounter = 0;
-	char *buf = (char *) malloc(21*sizeof(char));
-	char output[30];
+	        int i=0;
+	        int j = 0;
+	        int delimiterCounter = 0;
+	        char *buf = (char *) malloc(21*sizeof(char));
+	        char output[30];
 	
-	//printf("\nString0: %s\n", str);
+	        //printf("\nString0: %s\n", str);
 
-	//printf("Int1: %d\n", (int)strLen);
-	while(i<(int)strLen)
-	{
-		buf[j]=str[i];
-		j++;
+	        //printf("Int1: %d\n", (int)strLen);
+	        while(i<(int)strLen)
+	        {
+        		buf[j]=str[i];
+		        j++;
 		
-		if (str[i]=='$')
-		{
-			delimiterCounter = 0;
-		}
-		if (str[i]==',' && delimiterCounter < 7)
-		//if (str[i]==',' && (delimiterCounter < 7))
-		{
-		   	//buf[j-1] = '\0';
-			delimiterCounter++;
-           		//printf("BUF5 %s  j=%d delimit=%d\n", buf, j, delimiterCounter);
-			switch(delimiterCounter)
-			{
-			    case(2):
+		        if (str[i]=='$')
+		        {
+			        delimiterCounter = 0;
+		        }
+		        if (str[i]==',' && delimiterCounter < 7)
+		        //if (str[i]==',' && (delimiterCounter < 7))
+		        {
+		   	        //buf[j-1] = '\0';
+			        delimiterCounter++;
+           		    //printf("BUF5 %s  j=%d delimit=%d\n", buf, j, delimiterCounter);
+			        switch(delimiterCounter)
+			        {
+			            case(2):
                             	//sprintf(time,"%s", buf);
                             	strncpy(time, buf, j);
                             	//printf("time: %s\n", time);
-			    	break;
-			    case(3):
+			    	            break;
+			            case(3):
                             	strncpy(beliveFlag, buf, j);
                             	//printf("beliveFlag: %s\n", beliveFlag);
                             	break;
@@ -148,7 +199,7 @@ void show(char *s) {
                 	    case(6):
                             	strncpy(latitude, buf, j);
                             	//printf("latutide: %s  j=%d\n", latitude,j);
-				//puts(latitude);
+				        //puts(latitude);
                             	break;
                 	    case(7):
                             	strncpy(WE, buf, j);
@@ -156,44 +207,23 @@ void show(char *s) {
                             	break;
                 	    default:    break;
               		}
-			//memset(buf, 0, (int)strlen(buf));
-			j=0;
-		}
-		i++;
-		
-	}
-	
-		memset(str, 0, (int)strlen(str));
-	//	free(buf);
-		//	free(buf);
-              /*              printf("**************POSTWHILE************\n");
-                            printf("time: %s\n", time);
-                            printf("beliveFlag: %s\n", beliveFlag);
-                            printf("longtude: %s\n", longtude);
-                            printf("NS: %s\n", NS);
-                            printf("latutide: %s\n", latitude);
-                            printf("WE: %s\n", WE);
-                            printf("***********************************\n");*/
-	//memset(str, 0, (int)strLen);
-    	sprintf(output,"%c%s%c%s\n",NS[0],longtude,WE[0],latitude);
-	printf(output);
-	free(inputType);
-	free(buf);
-	free(time);
-	free(beliveFlag);
-	free(longtude);
-	free(NS);
-	free(latitude);
-	free(WE);
-
-//	memset(output, 0, (int)strlen(output));
- //   	printf("%s, %s\n", longtude, latitude);
-	}
-	//free(inputType);
-	//free(inputType);
-
-
-//	memset(inputType, 0, 6);
+			        //memset(buf, 0, (int)strlen(buf));
+			        j=0;
+		        }
+		        i++;
+	        }
+		    memset(str, 0, (int)strlen(str));
+    	    sprintf(output,"%c%s%c%s\n",NS[0],longtude,WE[0],latitude);
+	        free(inputType);
+	        free(buf);
+	        free(time);
+	        free(beliveFlag);
+	        free(longtude);
+	        free(NS);
+	        free(latitude);
+	        free(WE);
+	    }
+	return output;
 }
 
 
