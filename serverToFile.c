@@ -20,6 +20,8 @@ void error(const char *msg)
 
 int main(int argc, char *argv[])
 {
+     FILE *fp;
+
      int sockfd, newsockfd, portno;
      socklen_t clilen;
      char buffer[256];
@@ -33,6 +35,7 @@ int main(int argc, char *argv[])
      if (sockfd < 0) 
         error("ERROR opening socket");
      bzero((char *) &serv_addr, sizeof(serv_addr));
+     
      portno = atoi(argv[1]);
      serv_addr.sin_family = AF_INET;
      serv_addr.sin_addr.s_addr = INADDR_ANY;
@@ -47,6 +50,7 @@ int main(int argc, char *argv[])
                  &clilen);
      while(1)
      {
+         bzero(buffer,256);
          if (newsockfd < 0) 
             error("ERROR on accept");
          n = read(newsockfd,buffer,255);
@@ -57,10 +61,16 @@ int main(int argc, char *argv[])
                  (struct sockaddr *) &cli_addr,
                  &clilen);
          } 
-         printf("Here is the message: %s\n",buffer);
+         
+         fp = fopen("tmp.log","a+");
+         
+         printf("%s",buffer);
+
+         fprintf(fp,"%s", buffer);
+         fclose(fp);
          if (n < 0) error("ERROR writing to socket");
-         bzero(buffer,256);
      }
+      
      close(newsockfd);
      close(sockfd);
      return 0; 

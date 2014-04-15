@@ -14,6 +14,7 @@
 #include <netinet/in.h>
 #include <netdb.h>
 
+char *show(char *);
 void error(const char *msg)
 {
     perror(msg);
@@ -96,7 +97,6 @@ int main(int argc, char *argv[])
 
 
 
-char *show(char *);
 
 open_port(void)
 {
@@ -134,14 +134,14 @@ open_port(void)
 
 char *show(char *s) 
 {
-	char *str;
-	str = s;
-	size_t strLen = strlen(str);
+	//char *str;
+	//str = s;
+	size_t strLen = strlen(s);
 	//char inputType[6] = {0};
 	//printf("\nString0: %s\n", str);
 	//printf("\nString0: %s size: %d\n", inputType, (int)strlen(inputType));
 	char *inputType = (char *) malloc(6*sizeof(char));
-	strncpy(inputType, str, 6);
+	strncpy(inputType, s, 6);
 	//printf("\nString1: %s length: %d\n", inputType, (int)strlen(inputType));
 
 	if (!strcmp(inputType,"$GNRMC") || !strcmp(inputType, "$GPRMC"))
@@ -164,14 +164,14 @@ char *show(char *s)
 	        //printf("Int1: %d\n", (int)strLen);
 	        while(i<(int)strLen)
 	        {
-        		buf[j]=str[i];
+        		buf[j]=s[i];
 		        j++;
 		
-		        if (str[i]=='$')
+		        if (s[i]=='$')
 		        {
 			        delimiterCounter = 0;
 		        }
-		        if (str[i]==',' && delimiterCounter < 7)
+		        if (s[i]==',' && delimiterCounter < 7)
 		        //if (str[i]==',' && (delimiterCounter < 7))
 		        {
 		   	        //buf[j-1] = '\0';
@@ -212,7 +212,7 @@ char *show(char *s)
 		        }
 		        i++;
 	        }
-		    memset(str, 0, (int)strlen(str));
+		    //memset(str, 0, (int)strlen(str));
     	    sprintf(output,"%c%s%c%s\n",NS[0],longtude,WE[0],latitude);
 	        free(inputType);
 	        free(buf);
@@ -222,8 +222,8 @@ char *show(char *s)
 	        free(NS);
 	        free(latitude);
 	        free(WE);
+	        return output;
 	    }
-	return output;
 }
 
 
